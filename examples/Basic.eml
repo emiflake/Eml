@@ -1,0 +1,20 @@
+begin
+
+divBy = \a b. (eq (mod a b) 0)
+dot = \obj accessor. (eval ("obj." + accessor))
+lower = \str. (dot str "toLowerCase()")
+one = \x. if (and (divBy x 3) (divBy x 5))
+          then "Fizzbuzz"
+          else if (divBy x 3)
+               then "Fizz"
+               else if (divBy x 5)
+                    then "Buzz"
+                    else (show x)
+fizzbuzz =
+  \n. if (eq 0 n) then "" else (((fizzbuzz (n - 1)) + "\n") + (one n))
+factorial =
+  \n. if ((eq n) 0)
+      then 1
+      else (n * (factorial (n - 1)))
+greet = \name. (log ("Hello " + name))
+main = \_. (greet (lower (fizzbuzz 50)))
