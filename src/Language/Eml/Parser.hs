@@ -28,6 +28,7 @@ data Definition
 -}
 data Expr = NumLit Int
           | StringLit String
+          | ListLit [Expr]
           | App (NonEmpty Expr)
           | Lam (NonEmpty String) Expr
           | Let String Expr Expr
@@ -90,6 +91,16 @@ parseStringLit = StringLit <$> parseString
         _ <- char '"'
         return $ concat strings
 
+parseListLit :: Parser Expr
+parseListLit = do
+  let elem = whitespace *> parseAST <* whitespace
+  _ <- char '['
+  _ <- whitespace
+  elems <- elem `sepBy` char ','
+  _ <- whitespace
+  _ <- char ']'
+  pure $ ListLit elems
+
 parseVar :: Parser Expr
 parseVar = Var <$> identifier
 
@@ -150,12 +161,15 @@ parseApp = atomic <|> (parens $ do
       _ <- whitespace
       rhs <- many (whitespace *> parseAST <* whitespace)
       pure $ App (lhs :| rhs)
-    atomic = parseNumLit <|> parseVar <|> parseStringLit
-    parseOpSymbol = (Plus <$ char '+') <|> (Minus <$ char '-' ) <|> (Multiply <$ char '*')
+    atomic = parseListLit <|> parseNumLit <|> parseVar <|> parseStringLit
+    parseOpSymbol = (Plus <$ char '+')
+                    <|> (Minus <$ char '-' )
+                    <|> (Multiply <$ char '*')
+                    <|> (Cons <$ string "::")
 
 parseAST :: Parser Expr
 parseAST =
-       parseIf
+       try parseIf
        <|> parseApp
        <|> parseLet
        <|> parseLam

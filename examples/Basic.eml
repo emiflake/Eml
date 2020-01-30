@@ -1,13 +1,20 @@
 begin
 
-divBy = \a b. (eq (mod a b) 0)
+nil = (eval "[]")
+cons = (eval "h=>t=>[h,t]")
+head = (eval "x=>x[0]")
+tail = (eval "x=>x[1]")
+
+compose = \f g x. (f (g x))
+
+divides = \a b. (eq (mod a b) 0)
 dot = \obj accessor. (eval ("obj." + accessor))
 lower = \str. (dot str "toLowerCase()")
-one = \x. if (and (divBy x 3) (divBy x 5))
+one = \x. if (and (divides x 3) (divides x 5))
           then "Fizzbuzz"
-          else if (divBy x 3)
+          else if (divides x 3)
                then "Fizz"
-               else if (divBy x 5)
+               else if (divides x 5)
                     then "Buzz"
                     else (show x)
 fizzbuzz =
@@ -16,5 +23,39 @@ factorial =
   \n. if ((eq n) 0)
       then 1
       else (n * (factorial (n - 1)))
-greet = \name. (log ("Hello " + name))
-main = \_. (greet (lower (fizzbuzz 50)))
+
+square = \x. (x * x)
+
+padEitherSide = \before after str. (before + (str + after))
+
+
+showList = \xs.
+  if xs
+  then (padEitherSide "[" "]" (showList_ xs))
+  else "nil"
+showList_ = \xs.
+  if (and xs (and (tail xs) (head (tail xs))))
+  then ((show (head xs)) + (", " + (showList_ (tail xs))))
+  else (show (head xs))
+
+foldr_slow = \f start xs.
+  if (and xs (head xs))
+  then (f (head xs) (foldr_slow f start (tail xs)))
+  else start
+
+map = \f. (foldr (compose cons f) nil)
+
+filter = \predicate. (foldr_slow (\v acc. if (predicate v) then (v :: acc) else acc) nil)
+
+flip = \f x y. (f y x)
+divBy = (flip divides)
+
+always = \a b. a
+sum = (foldr (\x y. (x + y)) 0)
+length = (compose sum (map (always 1)))
+printf = \fmt vars. (log (interpolate fmt vars))
+
+greet = \name. (printf "Hello, {}!" [name])
+main = \_. (greet "World")
+
+

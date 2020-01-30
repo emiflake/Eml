@@ -6,4 +6,5 @@ data Operator
   = Plus
   | Minus
   | Multiply
+  | Cons
   deriving Show

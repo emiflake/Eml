@@ -8,7 +8,7 @@ compileModule (A.Module defs) =
   let body = unlines $
         "// Eml compiled module"
         : fmap compileDefinition defs
-  in (body++) <$> readFile "marshal/StandardLibrary.js"
+  in (++"main();") . (++body) <$> readFile "marshal/StandardLibrary.js"
 
 compileDefinition :: A.Definition -> String
 compileDefinition (A.Definition name expr) = "const " <> name <> " = " <> compileExpr expr <> ";"
@@ -21,12 +21,14 @@ compileExpr (A.Lam k body) = "((" <> k <> ") => " <> compileExpr body <> ")"
 compileExpr (A.Let rep e b) = "((" <> rep <> ") => (" <> compileExpr b <> "))(" <> compileExpr e <> ")"
 compileExpr (A.Var name) = name
 compileExpr (A.If cond t f) = "(" <> compileExpr cond <> ") ? (" <> compileExpr t <> ") : (" <> compileExpr f <> ")"
+compileExpr (A.BinOp Cons lhs rhs) = "(cons(" <> compileExpr lhs <> ")(" <> compileExpr rhs <> "))"
 compileExpr (A.BinOp op lhs rhs) =
   let symbol =
         case op of
           Plus -> "+"
           Minus -> "-"
           Multiply -> "*"
+          _ -> undefined
   in compileExpr lhs <> " " <> symbol <> " " <> compileExpr rhs
 
 
