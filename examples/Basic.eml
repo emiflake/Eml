@@ -10,13 +10,15 @@ compose = \f g x. (f (g x))
 divides = \a b. (eq (mod a b) 0)
 dot = \obj accessor. (eval ("obj." + accessor))
 lower = \str. (dot str "toLowerCase()")
-one = \x. if (and (divides x 3) (divides x 5))
-          then "Fizzbuzz"
-          else if (divides x 3)
-               then "Fizz"
-               else if (divides x 5)
-                    then "Buzz"
-                    else (show x)
+one = \x. if (and (divides x 3) (divides x 5)) then
+            "Fizzbuzz"
+          else if (divides x 3) then
+            "Fizz"
+          else if (divides x 5) then
+            "Buzz"
+          else
+            (show x)
+
 fizzbuzz =
   \n. if (eq 0 n) then "" else (((fizzbuzz (n - 1)) + "\n") + (one n))
 factorial =
@@ -52,10 +54,26 @@ divBy = (flip divides)
 
 always = \a b. a
 sum = (foldr (\x y. (x + y)) 0)
+
 length = (compose sum (map (always 1)))
+
 printf = \fmt vars. (log (interpolate fmt vars))
 
+take = \amt xs.
+  if (eq amt 0) then
+    []
+  else if (and xs (head xs)) then
+    ((head xs) :: (take (amt - 1) (tail xs)))
+  else
+    []
+
+infoAboutList = \list. (printf "This list is {} long, here are the first 5 elementns: {}" [(length list), (showList (take 5 list))])
+
+andThen_ = \a b. [a , b]
+
 greet = \name. (printf "Hello, {}!" [name])
-main = \_. (greet "World")
+main = \_. (andThen_ (log "hi")
+           (andThen_ (log "hi2")
+                     (log "hi3")))
 
 
