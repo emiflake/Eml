@@ -23,4 +23,3 @@ data Expr = NumLit Int
           | BinOp Operator Expr Expr
           | If Expr Expr Expr
           deriving Show
-

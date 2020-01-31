@@ -19,6 +19,7 @@ one = \x. if (and (divides x 3) (divides x 5)) then
           else
             (show x)
 
+
 fizzbuzz =
   \n. if (eq 0 n) then "" else (((fizzbuzz (n - 1)) + "\n") + (one n))
 factorial =
@@ -40,14 +41,15 @@ showList_ = \xs.
   then ((show (head xs)) + (", " + (showList_ (tail xs))))
   else (show (head xs))
 
-foldr_slow = \f start xs.
+
+foldr_native = \f start xs.
   if (and xs (head xs))
-  then (f (head xs) (foldr_slow f start (tail xs)))
+  then (f (head xs) (foldr_native f start (tail xs)))
   else start
 
 map = \f. (foldr (compose cons f) nil)
 
-filter = \predicate. (foldr_slow (\v acc. if (predicate v) then (v :: acc) else acc) nil)
+filter = \predicate. (foldr (\v acc. if (predicate v) then (v :: acc) else acc) nil)
 
 flip = \f x y. (f y x)
 divBy = (flip divides)
