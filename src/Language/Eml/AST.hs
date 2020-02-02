@@ -4,10 +4,10 @@ module Language.Eml.AST
   , Expr(..)
   ) where
 
-import Language.Eml.Operator (Operator(..))
+import           Language.Eml.Operator (Operator (..))
 
 data Module
-  = Module [Definition]
+  = Module String [Definition]
   deriving Show
 
 data Definition

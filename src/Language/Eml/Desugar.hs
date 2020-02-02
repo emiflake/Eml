@@ -7,7 +7,7 @@ import           Language.Eml.Parser   as P
 import           Data.List.NonEmpty
 
 desugarModule :: P.Module -> A.Module
-desugarModule (P.Module defs) = A.Module (fmap desugarDef defs)
+desugarModule (P.Module name defs) = A.Module name (fmap desugarDef defs)
 
 desugarDef :: P.Definition -> A.Definition
 desugarDef (P.Definition name expr) = A.Definition name (desugarExpr expr)

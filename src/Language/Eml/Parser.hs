@@ -16,7 +16,7 @@ import           Language.Eml.Operator (Operator (..))
 import           Data.List.NonEmpty    hiding (some1)
 
 data Module
-  = Module [Definition]
+  = Module String [Definition]
   deriving Show
 
 data Definition
@@ -31,18 +31,20 @@ doParseFile path = doParseModule <$> readFile path
 
 module' :: Parser Module
 module' =
-  string "begin" >>
-  whitespace' >>
-  Module <$> many1 definition
+  Module <$ string "begin"
+         <* whitespace
+         <*> identifier
+         <* whitespace
+         <*> many1 definition
 
 definition :: Parser Definition
 definition = do
   name <- identifier
-  _ <- whitespace'
+  _ <- whitespace
   _ <- string "="
-  _ <- whitespace'
+  _ <- whitespace
   v <- expr
-  _ <- whitespace'
+  _ <- whitespace
   pure $ Definition name v
 
 
@@ -50,11 +52,12 @@ definition = do
 
 lit = :numlit    #number
     | :stringlit #string
+    | :arraylit  "[" expr ("," expr)* "]"
 
 op = :operator #op
 
 exp = :lit         lit
-    | :application exp exp
+    | :application "(" exp+ ")"
     | :binop       exp op exp
     | :parentheses "(" exp ")"
     | :let         "let" var "=" exp "in" exp
@@ -82,31 +85,29 @@ some1 :: Parser a -> Parser (NonEmpty a)
 some1 p = let p' = whitespace *> p <* whitespace
           in (:|) <$> p' <*> many p'
 
+
 expr :: Parser Expr
-expr = App <$> some1 expr' <|> expr'
-
-expr' :: Parser Expr
-expr' = do
-  lhs <- expr''
-  try (binop lhs) <|> pure lhs
-
-expr'' :: Parser Expr
-expr'' = (lit <?> "lit")
-   <|> (parentheses <?> "parentheses")
+expr = (try if' <?> "if")
+   <|> (try lit <?> "lit")
+   <|> (try let' <?> "let")
    <|> (Var <$> identifier <?> "identifier")
-   <|> (if' <?> "if")
+   <|> (appBinOp <?> "application / binop")
    <|> (lam <?> "lambda")
-
-followLine :: Parser ()
-followLine =
-  void $ many1 (char '\n' >> many1 (char ' '))
+   <|> (parentheses <?> "parentheses")
 
 {- lit -}
 lit :: Parser Expr
-lit = numLit <|> stringLit
+lit = numLit <|> stringLit <|> listLit
 
 numLit :: Parser Expr
 numLit = NumLit . read <$> many1 digit
+
+listLit :: Parser Expr
+listLit = do
+  _ <- char '['
+  elems <- (whitespaced expr) `sepBy` char ','
+  _ <- char ']'
+  pure $ ListLit elems
 
 stringLit :: Parser Expr
 stringLit = StringLit <$> parseString
@@ -130,15 +131,42 @@ stringLit = StringLit <$> parseString
         _ <- char '"'
         return $ concat strings
 
-{- binop -}
+{- let -}
+let' :: Parser Expr
+let' = do
+  _ <- string "let"
+  _ <- whitespace
+  varName <- identifier
+  _ <- whitespace
+  _ <- char '='
+  _ <- whitespace
+  with <- expr
+  _ <- whitespace
+  _ <- string "in"
+  _ <- whitespace
+  body <- expr
+  pure $ Let varName with body
+
+{- binop / app -}
+appBinOp :: Parser Expr
+appBinOp = parens $ do
+  lhs <- expr
+  try (binop lhs) <|> app lhs
+
 binop :: Expr -> Parser Expr
-binop lhs =
+binop lhs = do
   let op = (Plus     <$ char '+')
        <|> (Minus    <$ char '-')
        <|> (Multiply <$ char '*')
        <|> (Cons     <$ string "::")
-  in whitespaced op     >>= \op' ->
-     whitespaced expr' >>= \rhs -> pure $ BinOp op' lhs rhs
+  op' <- whitespaced op
+  rhs <- whitespaced expr
+  pure $ BinOp op' lhs rhs
+
+app :: Expr -> Parser Expr
+app lhs =
+  App . (lhs :|) <$> many (whitespaced expr)
+
 
 {- parentheses -}
 parentheses :: Parser Expr
@@ -158,8 +186,6 @@ if' = do
 {- lam -}
 lam :: Parser Expr
 lam = do
-  let some1 p = let p' = whitespace *> p <* whitespace
-                in (:|) <$> p' <*> many p'
   _ <- char '\\'
   _ <- whitespace
   varNames <- some1 identifier
@@ -170,17 +196,13 @@ lam = do
   pure $ Lam varNames body
 
 {- util -}
-indent :: Parser ()
-indent = void $ oneOf [' ', '\t']
-
 whitespace :: Parser ()
 whitespace = do
-  _ <- many indent
-  -- _ <- many (char '\n' >> indent)
+  _ <- many (oneOf [' ', '\t', '\n'])
   pure ()
 
-whitespace' :: Parser ()
-whitespace' = void . try $ many (oneOf [' ', '\t', '\n'])
+parens :: Parser a -> Parser a
+parens p = char '(' *> p <* char ')'
 
 whitespaced :: Parser a -> Parser a
 whitespaced p = whitespace *> p <* whitespace
@@ -217,22 +239,6 @@ identifier = do
 
 -- parseVar :: Parser Expr
 -- parseVar = Var <$> identifier
-
-
--- parseLet :: Parser Expr
--- parseLet = do
---   _ <- string "let"
---   _ <- whitespace
---   varName <- identifier
---   _ <- whitespace
---   _ <- char '='
---   _ <- whitespace
---   with <- parseAST
---   _ <- whitespace
---   _ <- string "in"
---   _ <- whitespace
---   body <- parseAST
---   pure $ Let varName with body
 
 -- parseApp :: Parser Expr
 -- parseApp = atomic <|> do
