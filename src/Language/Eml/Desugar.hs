@@ -22,3 +22,6 @@ desugarExpr (P.Let k v e) = A.Let k (desugarExpr v) (desugarExpr e)
 desugarExpr (P.Var v) = A.Var v
 desugarExpr (P.BinOp op lhs rhs) = A.BinOp op (desugarExpr lhs) (desugarExpr rhs)
 desugarExpr (P.If cond t f) = A.If (desugarExpr cond) (desugarExpr t) (desugarExpr f)
+desugarExpr (P.Asc expr ty) = A.Asc (desugarExpr expr) ty
+
+

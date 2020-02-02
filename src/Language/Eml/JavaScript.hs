@@ -25,6 +25,7 @@ compileExpr (A.Let rep e b) = "((" <> rep <> ") => (" <> compileExpr b <> "))(" 
 compileExpr (A.Var name) = name
 compileExpr (A.If cond t f) = "(" <> compileExpr cond <> ") ? (" <> compileExpr t <> ") : (" <> compileExpr f <> ")"
 compileExpr (A.BinOp Cons lhs rhs) = "(cons(" <> compileExpr lhs <> ")(" <> compileExpr rhs <> "))"
+compileExpr (A.Asc expr _) = compileExpr expr
 compileExpr (A.BinOp op lhs rhs) =
   let symbol =
         case op of

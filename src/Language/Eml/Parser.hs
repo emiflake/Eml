@@ -6,12 +6,14 @@ module Language.Eml.Parser
   , doParseFile
   ) where
 
+import           Control.Applicative   (Alternative)
 import           Control.Monad
 
 import           Text.Parsec
 import           Text.Parsec.String
 
 import           Language.Eml.Operator (Operator (..))
+import           Language.Eml.Type
 
 import           Data.List.NonEmpty    hiding (some1)
 
@@ -47,7 +49,6 @@ definition = do
   _ <- whitespace
   pure $ Definition name v
 
-
 {-| Grammar
 
 lit = :numlit    #number
@@ -56,6 +57,11 @@ lit = :numlit    #number
 
 op = :operator #op
 
+type = :bool   "Bool"
+     | :num    "Num"
+     | :arrow  type "->" type
+     | :var    var
+
 exp = :lit         lit
     | :application "(" exp+ ")"
     | :binop       exp op exp
@@ -63,6 +69,7 @@ exp = :lit         lit
     | :let         "let" var "=" exp "in" exp
     | :if          "if" exp "then" exp "else" exp
     | :lam         "\" var "." exp
+    | :ascription  exp "::" type
 
 -}
 
@@ -72,6 +79,7 @@ exp = :lit         lit
 data Expr = NumLit Int
           | StringLit String
           | ListLit [Expr]
+          | Asc Expr Type
           | App (NonEmpty Expr)
           | Lam (NonEmpty String) Expr
           | Let String Expr Expr
@@ -94,6 +102,7 @@ expr = (try if' <?> "if")
    <|> (appBinOp <?> "application / binop")
    <|> (lam <?> "lambda")
    <|> (parentheses <?> "parentheses")
+   <|> (ascription <?> "ascription")
 
 {- lit -}
 lit :: Parser Expr
@@ -103,14 +112,15 @@ numLit :: Parser Expr
 numLit = NumLit . read <$> many1 digit
 
 listLit :: Parser Expr
-listLit = do
-  _ <- char '['
-  elems <- (whitespaced expr) `sepBy` char ','
-  _ <- char ']'
-  pure $ ListLit elems
+listLit =
+  ListLit
+    <$  char '['
+    <*> whitespaced expr `sepBy` char ','
+    <*  char ']'
 
 stringLit :: Parser Expr
 stringLit = StringLit <$> parseString
+  -- where block stolen from https://stackoverflow.com/questions/24106314/parser-for-quoted-string-using-parsec
   where
     escape :: Parser String
     escape = do
@@ -133,19 +143,14 @@ stringLit = StringLit <$> parseString
 
 {- let -}
 let' :: Parser Expr
-let' = do
-  _ <- string "let"
-  _ <- whitespace
-  varName <- identifier
-  _ <- whitespace
-  _ <- char '='
-  _ <- whitespace
-  with <- expr
-  _ <- whitespace
-  _ <- string "in"
-  _ <- whitespace
-  body <- expr
-  pure $ Let varName with body
+let' =
+  Let <$  string "let"
+      <*> whitespaced identifier
+      <*  char '='
+      <*> whitespaced expr
+      <*  string "in"
+      <*  whitespace
+      <*> expr
 
 {- binop / app -}
 appBinOp :: Parser Expr
@@ -170,12 +175,11 @@ app lhs =
 
 {- parentheses -}
 parentheses :: Parser Expr
-parentheses = whitespaced $
-  char '(' *> (whitespaced expr) <* char ')'
+parentheses = whitespaced $ char '(' *> whitespaced expr <* char ')'
 
 {- if -}
 if' :: Parser Expr
-if' = do
+if' =
   If <$  string "if"
      <*> whitespaced expr
      <*  string "then"
@@ -185,15 +189,36 @@ if' = do
 
 {- lam -}
 lam :: Parser Expr
-lam = do
-  _ <- char '\\'
-  _ <- whitespace
-  varNames <- some1 identifier
-  _ <- whitespace
-  _ <- char '.'
-  _ <- whitespace
-  body <- expr
-  pure $ Lam varNames body
+lam =
+  Lam <$  char '\\'
+      <*  whitespace
+      <*> some1 identifier
+      <*  whitespace
+      <*  char '.'
+      <*  whitespace
+      <*> expr
+
+{- types! -}
+ascription :: Parser Expr
+ascription = do
+  char '<'
+  expr <- expr
+  whitespaced (string ":")
+  ty <- type'
+  char '>'
+  pure $ Asc expr ty
+
+type' :: Parser Type
+type' = tyParen <|> tyArrow
+  where
+    tyParen = parens type'
+    tyVar = TyVar <$> whitespaced identifier
+    tyBuiltin =
+      (NumType <$ string "Num") <|>
+      (BoolType <$ string "Bool")
+    tyArrow = do
+      lhs <- tyParen <|> tyVar <|> tyBuiltin
+      ((:~>) lhs <$ string "->" <*> type' <|> pure lhs)
 
 {- util -}
 whitespace :: Parser ()
@@ -207,57 +232,15 @@ parens p = char '(' *> p <* char ')'
 whitespaced :: Parser a -> Parser a
 whitespaced p = whitespace *> p <* whitespace
 
+guarded :: (Alternative m, Monad m) => (a -> Bool) -> m a -> m a
+guarded predicate a = do a' <- a
+                         guard (predicate a')
+                         pure a'
+
 identifier :: Parser String
-identifier = do
+identifier =
   let sym =
         (:) <$> idFirst <*> many idRest
         where idFirst = oneOf (['_'] <> ['A'..'Z'] <> ['a'..'z'])
               idRest = oneOf (['_', '\''] <> ['A'..'Z'] <> ['a'..'z'] <> ['0'..'9'])
-  s <- sym
-  guard (s `notElem` ["if", "then", "else"])
-  pure s
-
-
--- parseListLit :: Parser Expr
--- parseListLit = do
---   let elem = whitespace *> parseAST <* whitespace
---   _ <- char '['
---   _ <- whitespace
---   elems <- elem `sepBy` char ','
---   _ <- whitespace
---   _ <- char ']'
---   pure $ ListLit elems
-
--- whitespace :: Parser ()
--- whitespace = void $ many (oneOf [' ', '\t', '\n'])
-
-
--- parens :: Parser a -> Parser a
--- parens p = char '(' *> p <* char ')'
-
-
-
--- parseVar :: Parser Expr
--- parseVar = Var <$> identifier
-
--- parseApp :: Parser Expr
--- parseApp = atomic <|> do
---   lhs <- parseAST
---   try (parseOp' lhs) <|> (parseApp' lhs <?> "function application")
---   where
---     parseOp' lhs = do
---       _ <- whitespace
---       op <- parseOpSymbol
---       _ <- whitespace
---       rhs <- parseAST
---       pure $ BinOp op lhs rhs
---     parseApp' lhs = do
---       _ <- whitespace
---       rhs <- many (whitespace *> parseAST <* whitespace)
---       pure $ App (lhs :| rhs)
---     atomic = parseListLit <|> parseNumLit <|> parseVar <|> parseStringLit
---     parseOpSymbol = (Plus <$ char '+')
---                     <|> (Minus <$ char '-' )
---                     <|> (Multiply <$ char '*')
---                     <|> (Cons <$ string "::")
-
+  in guarded (`notElem` ["if", "then", "else"]) sym

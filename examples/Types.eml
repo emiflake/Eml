@@ -1,0 +1,10 @@
+begin Types
+
+true = <(eval "true") : Bool>
+false = <(eval "false") : Bool>
+
+not = <(eval "x=>!x") : Bool -> Bool>
+
+a = \x. (x + 3)
+
+test = (not true)

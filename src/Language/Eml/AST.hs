@@ -5,6 +5,7 @@ module Language.Eml.AST
   ) where
 
 import           Language.Eml.Operator (Operator (..))
+import           Language.Eml.Type
 
 data Module
   = Module String [Definition]
@@ -16,6 +17,7 @@ data Definition
 
 data Expr = NumLit Int
           | StringLit String
+          | Asc Expr Type
           | App Expr Expr
           | Lam String Expr
           | Let String Expr Expr
