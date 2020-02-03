@@ -13,6 +13,14 @@
 * What's here
   You can view some examples in the [[https://github.com/emiflake/Eml/tree/master/examples][examples]] folder.
 
+Hello world in *Eml*
+#+BEGIN_SRC haskell
+-- TODO: support proper FFI
+log = <(eval "x => console.log(x)") : String -> Unit>
+
+main = \_. (log "Hello, world")
+#+END_SRC
+
 * TODO Goals
 ** TODO Language goals [2/4] 
    - [X] Simple parsing system
