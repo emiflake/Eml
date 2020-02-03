@@ -110,9 +110,10 @@ checkModule ::
 checkModule (A.Module _ bindings) = go standardEnv bindings
   where go env (A.Definition name expr : bindings') = do
           tvar <- freshTyVar
-          (_, t) <- infer (Map.insert name (TyVar tvar) env) expr
-          _ <- unify (TyVar tvar) t
-          go (Map.insert name (generalize t) env) bindings'
+          (_, rt) <- infer (Map.insert name (TyVar tvar) env) expr
+          rss <- unify (TyVar tvar) rt
+          let ft = applySubst rss (TyVar tvar)
+          go (Map.insert name ft env) bindings'
         go env [] = pure env
 
 {- A.Let name rhs body -> do
@@ -183,22 +184,6 @@ infer env expr = case expr of
 
 
   where
-    generalizeIfValue e ty
-      | isValue e = generalize ty
-      | otherwise = ty
-
-    isValue :: A.Expr -> Bool
-    isValue expr' = case expr' of
-      (A.Let _ r b)   -> isValue r && isValue b
-      (A.Lam _ _)     -> True
-      (A.App _ _)     -> False
-      A.BinOp {}      -> False
-      A.If {}         -> False
-      (A.Asc e _)     -> isValue e
-      (A.NumLit _)    -> True
-      (A.StringLit _) -> True
-      (A.Var _)       -> False
-
     inferOp Plus     = pure (NumType :~> NumType :~> NumType)
     inferOp Minus    = pure (NumType :~> NumType :~> NumType)
     inferOp Multiply = pure (NumType :~> NumType :~> NumType)
@@ -207,3 +192,19 @@ infer env expr = case expr of
       pure (TyVar freshTy :~> TyVar freshTy :~> TyVar freshTy)
 
 
+
+generalizeIfValue e ty
+  | isValue e = generalize ty
+  | otherwise = ty
+
+isValue :: A.Expr -> Bool
+isValue expr' = case expr' of
+  (A.Let _ r b)   -> isValue r && isValue b
+  (A.Lam _ _)     -> True
+  (A.App _ _)     -> False
+  A.BinOp {}      -> False
+  A.If {}         -> False
+  (A.Asc e _)     -> isValue e
+  (A.NumLit _)    -> True
+  (A.StringLit _) -> True
+  (A.Var _)       -> False

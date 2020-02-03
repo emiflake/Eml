@@ -39,7 +39,7 @@ module' :: Parser Module
 module' =
   Module <$ string "begin"
          <* whitespace
-         <*> identifier
+         <*> moduleIdentifier
          <* whitespace
          <*> many1 definition
 
@@ -93,6 +93,7 @@ type = :bool   "Bool"
      | :num    "Num"
      | :string "String"
      | :unit   "Unit"
+     | :cust   upvar
      | :paren  "(" type ")"
      | :arrow  type "->" type
      | :var    var
@@ -284,6 +285,22 @@ identifier :: Parser String
 identifier =
   let sym =
         (:) <$> idFirst <*> many idRest
-        where idFirst = oneOf (['_'] <> ['A'..'Z'] <> ['a'..'z'])
+        where idFirst = oneOf (['_'] <> ['a'..'z'])
               idRest = oneOf (['_', '\''] <> ['A'..'Z'] <> ['a'..'z'] <> ['0'..'9'])
+  in guarded (`notElem` ["if", "then", "else"]) sym
+
+tyIdentifier :: Parser String
+tyIdentifier =
+  let sym =
+        (:) <$> idFirst <*> many idRest
+        where idFirst = oneOf (['_'] <> ['A'..'Z'])
+              idRest = oneOf (['_', '\''] <> ['A'..'Z'] <> ['a'..'z'] <> ['0'..'9'])
+  in guarded (`notElem` ["if", "then", "else"]) sym
+
+moduleIdentifier :: Parser String
+moduleIdentifier =
+  let sym =
+        (:) <$> idFirst <*> many idRest
+        where idFirst = oneOf (['_'] <> ['A'..'Z'])
+              idRest = oneOf (['.', '_', '\''] <> ['A'..'Z'] <> ['a'..'z'] <> ['0'..'9'])
   in guarded (`notElem` ["if", "then", "else"]) sym
