@@ -32,7 +32,9 @@ compileExpr (A.NumLit n)   = show n
 compileExpr (A.StringLit s) = "\"" <> s <> "\""
 compileExpr (A.App f a)    = compileExpr f <> "(" <> compileExpr a <> ")"
 compileExpr (A.Lam k body) = "(" <> k <> " => " <> compileExpr body <> ")"
-compileExpr (A.Let rep e b) = "((" <> rep <> ") => (" <> compileExpr b <> "))(" <> compileExpr e <> ")"
+-- Hacky hack.
+-- TODO: figure out how to do proper recursion, somehow. Or maybe not.
+compileExpr (A.Let rep e b) = "((" <> escapeQuot rep <> ") => (" <> compileExpr b <> "))((()=>{const " <> escapeQuot rep <> " = " <> compileExpr e <> ";return " <> escapeQuot rep <> "})())"
 compileExpr (A.Var name) = escapeQuot name
 compileExpr (A.If cond t f) = "(" <> compileExpr cond <> ") ? (" <> compileExpr t <> ") : (" <> compileExpr f <> ")"
 compileExpr (A.BinOp Cons lhs rhs) = "(cons(" <> compileExpr lhs <> ")(" <> compileExpr rhs <> "))"

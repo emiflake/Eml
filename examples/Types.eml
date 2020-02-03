@@ -34,9 +34,11 @@ greet = \name. (concat "Hello, " name)
 identity : a -> a
 identity = \x. x
 
+triangle = \x. if (eq x 1) then x else (x + (triangle (x - 1)))
+
 divides : Num -> Num -> Bool
 divides = \a b. (eq (mod a b) 0)
 
 main = \_.
-  (log (show (divides 2 3)))
+  (log (show (triangle 10)))
 

@@ -88,7 +88,6 @@ instantiate (TyVar tv) = pure (TyVar tv)
 generalize :: Type -> Type
 generalize ty = foldr TyForall ty (ftv ty)
 
-
 runCheck m = runM . runError . runFresh $ m
 
 inferIO :: Map String Type -> A.Expr -> IO (Either TypeError (Subst, Type))
@@ -110,10 +109,20 @@ checkModule ::
   , Carrier sig m ) => A.Module -> m (Map String Type)
 checkModule (A.Module _ bindings) = go standardEnv bindings
   where go env (A.Definition name expr : bindings') = do
-          (_, t) <- infer env expr
+          tvar <- freshTyVar
+          (_, t) <- infer (Map.insert name (TyVar tvar) env) expr
+          _ <- unify (TyVar tvar) t
           go (Map.insert name (generalize t) env) bindings'
         go env [] = pure env
 
+{- A.Let name rhs body -> do
+    tvar <- freshTyVar
+    (rs, rt) <- infer (Map.insert name (TyVar tvar) env) rhs
+    rss <- unify (TyVar tvar) rt
+    let rt' = generalizeIfValue rhs (applySubst rss (TyVar tvar))
+    (bs, bt) <- infer (Map.insert name rt' env) body
+    pure (composeSubsts bs rs, applySubst rs bt)
+-}
 infer ::
   ( Member Fresh sig
   , Member (Error TypeError) sig
