@@ -1,9 +1,5 @@
 // Eml standard library
 const and = a => b => a && b;
-const mod = a => b => a % b;
-const eq = a => b => a == b;
-const show = num => num.toString();
-const log = str => console.log(str);
 const rangeTo = n => {
     let acc = [];
     for (let i = n; i > 0; i--)

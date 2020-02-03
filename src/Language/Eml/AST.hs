@@ -4,10 +4,11 @@ module Language.Eml.AST
   , Expr(..)
   ) where
 
-import Language.Eml.Operator (Operator(..))
+import           Language.Eml.Operator (Operator (..))
+import           Language.Eml.Type
 
 data Module
-  = Module [Definition]
+  = Module String [Definition]
   deriving Show
 
 data Definition
@@ -16,6 +17,7 @@ data Definition
 
 data Expr = NumLit Int
           | StringLit String
+          | Asc Expr Type
           | App Expr Expr
           | Lam String Expr
           | Let String Expr Expr
@@ -23,4 +25,3 @@ data Expr = NumLit Int
           | BinOp Operator Expr Expr
           | If Expr Expr Expr
           deriving Show
-

@@ -1,4 +1,4 @@
-begin
+begin Basic
 
 nil = (eval "[]")
 cons = (eval "h=>t=>[h,t]")
@@ -10,17 +10,21 @@ compose = \f g x. (f (g x))
 divides = \a b. (eq (mod a b) 0)
 dot = \obj accessor. (eval ("obj." + accessor))
 lower = \str. (dot str "toLowerCase()")
-one = \x. if (and (divides x 3) (divides x 5)) then
-            "Fizzbuzz"
-          else if (divides x 3) then
-            "Fizz"
-          else if (divides x 5) then
-            "Buzz"
-          else
-            (show x)
+
 
 fizzbuzz =
+  let one = \x.
+    if (and (divides x 3) (divides x 5)) then
+      "Fizzbuzz"
+    else if (divides x 3) then
+      "Fizz"
+    else if (divides x 5) then
+      "Buzz"
+    else
+      (show x)
+  in
   \n. if (eq 0 n) then "" else (((fizzbuzz (n - 1)) + "\n") + (one n))
+
 factorial =
   \n. if ((eq n) 0)
       then 1
@@ -29,7 +33,6 @@ factorial =
 square = \x. (x * x)
 
 padEitherSide = \before after str. (before + (str + after))
-
 
 showList = \xs.
   if xs
@@ -40,14 +43,15 @@ showList_ = \xs.
   then ((show (head xs)) + (", " + (showList_ (tail xs))))
   else (show (head xs))
 
-foldr_slow = \f start xs.
+
+foldr_native = \f start xs.
   if (and xs (head xs))
-  then (f (head xs) (foldr_slow f start (tail xs)))
+  then (f (head xs) (foldr_native f start (tail xs)))
   else start
 
 map = \f. (foldr (compose cons f) nil)
 
-filter = \predicate. (foldr_slow (\v acc. if (predicate v) then (v :: acc) else acc) nil)
+filter = \predicate. (foldr (\v acc. if (predicate v) then (v :: acc) else acc) nil)
 
 flip = \f x y. (f y x)
 divBy = (flip divides)
@@ -69,11 +73,16 @@ take = \amt xs.
 
 infoAboutList = \list. (printf "This list is {} long, here are the first 5 elementns: {}" [(length list), (showList (take 5 list))])
 
-andThen_ = \a b. [a , b]
+div = (eval "x=>y=>x/y")
+pow = (eval "x=>y=>x**y")
 
-greet = \name. (printf "Hello, {}!" [name])
-main = \_. (andThen_ (log "hi")
-           (andThen_ (log "hi2")
-                     (log "hi3")))
+chance =
+  let pairs = \n. (div (n * (n - 1)) 2)
+  in \n. (1 - (pow (div 364 365) (pairs n)))
+
+main = \_.
+  (map (\n.
+      (printf "Chance for 2 people to have the same birthday in a room of {} people is {}"
+      [ n, (chance n) ])) (rangeTo 40))
 
 

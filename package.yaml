@@ -23,6 +23,8 @@ dependencies:
 - base >= 4.7 && < 5
 - parsec
 - pretty-simple
+- fused-effects == 0.5.0.1
+- containers
 
 library:
   source-dirs: src

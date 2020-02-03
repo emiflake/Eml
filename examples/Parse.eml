@@ -1,0 +1,27 @@
+begin
+y = (2 + 10)
+z = (2 + (eq x y))
+a = "string-test"
+b = true
+c = false
+e = \x. x
+g = \f x. (f (f x))
+h = \x . \y . x
+m = 2
+ij = (if 1 then 2 else 4)
+  abundance = ((((((2 + 2)))))) 
+if1 = if 1 then 2 else 4
+if2 = if 1 then (if 2 then 3 else 4) else 4
+if3 = if 1 then (if 2 then 3 else 4) else (if 2 then 3 else 4)
+if3 = if 1 then if 2 then 3 else 4 else (if 2 then 3 else 4)
+if3 = if 1 then if 2 then 3 else 4 else if 2 then 3 else 4
+if3 = if 1 then
+  (if 2 then 3 else 4)
+  else (if 2 then 3 else 4)
+take = \amt xs.
+  if (eq amt 0) then
+    []
+  else if (and xs (head xs)) then
+    ((head xs) :: (take (amt - 1) (tail xs)))
+  else
+    []
