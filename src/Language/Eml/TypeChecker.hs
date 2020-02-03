@@ -182,8 +182,8 @@ infer env expr = case expr of
       (A.Let _ r b)   -> isValue r && isValue b
       (A.Lam _ _)     -> True
       (A.App _ _)     -> False
-      (A.BinOp _ _ _) -> False
-      (A.If _ _ _)    -> False
+      A.BinOp {}      -> False
+      A.If {}         -> False
       (A.Asc e _)     -> isValue e
       (A.NumLit _)    -> True
       (A.StringLit _) -> True
