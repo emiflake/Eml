@@ -100,14 +100,16 @@ checkIO = runCheck . checkModule
 
 unifyIO :: Type -> Type -> IO (Either TypeError Subst)
 unifyIO a b = runCheck $ unify a b
--- unify :: ( Member (Error TypeError) sig
---          , Carrier sig m
---          ) => Type -> Type -> m Subst
+
+standardEnv :: Map String Type
+standardEnv = Map.fromList
+  [ ( "eval", StringType :~> TyVar "a" ) ]
+
 checkModule ::
   ( Member Fresh sig
   , Member (Error TypeError) sig
   , Carrier sig m ) => A.Module -> m (Map String Type)
-checkModule (A.Module _ bindings) = go (Map.singleton "eval" (StringType :~> TyForall "a" (TyVar "a"))) bindings
+checkModule (A.Module _ bindings) = go standardEnv bindings
   where go env (A.Definition name expr : bindings') = do
           (_, t) <- infer env expr
           go (Map.insert name (generalize t) env) bindings'
