@@ -106,11 +106,9 @@ unifyIO a b = runCheck $ unify a b
 checkModule ::
   ( Member Fresh sig
   , Member (Error TypeError) sig
-  , Member (Lift IO) sig
   , Carrier sig m ) => A.Module -> m (Map String Type)
 checkModule (A.Module _ bindings) = go (Map.singleton "eval" (StringType :~> TyForall "a" (TyVar "a"))) bindings
   where go env (A.Definition name expr : bindings') = do
-          sendM $ print env
           (_, t) <- infer env expr
           go (Map.insert name (generalize t) env) bindings'
         go env [] = pure env

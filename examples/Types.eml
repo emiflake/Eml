@@ -1,22 +1,17 @@
 begin Types
 
-true = <(eval "true") : Bool>
-false = <(eval "false") : Bool>
-
+True = <(eval "true") : Bool>
+False = <(eval "false") : Bool>
+eq = <(eval "x=>y=>x==y") : Num -> Num -> Bool>
+mod = <(eval "x=>y=>x%y") : Num -> Num -> Num>
+show = <(eval "x=>x.toString()") : Num -> String>
+showBool = \x. if x then "True" else "False"
 not = <(eval "x=>!x") : Bool -> Bool>
-
-not' = \x. if x then false else true
-
-a = \x y. (x + y)
-
-test = ((a 2) 3)
-
+not' = \x. if x then False else True
 concat = <(eval "x=>y=>x+y") : String -> String -> String>
-
 greet = \name. (concat "Hello, " name)
-
 log = <(eval "x=>console.log(x)") : String -> Unit>
+divides = \a b. (eq (mod a b) 0)
+main = \_.
+  (log (showBool (divides 2 3)))
 
-identity = <\x. x : Num -> Num>
-
-main = (log "Hello")

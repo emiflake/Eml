@@ -1,4 +1,4 @@
-begin
+begin Basic
 
 nil = (eval "[]")
 cons = (eval "h=>t=>[h,t]")

@@ -25,13 +25,9 @@ main = do
         Left e -> print e
         Right ast' -> do
           let desugared = Eml.desugarModule ast'
-          pPrint ast
+          -- pPrint ast
           res <- Eml.checkIO desugared
           case res of
             Left e  -> print e
-            Right r ->
-              do
-                Eml.compileModule desugared >>= putStrLn
-                forM_ (Map.assocs r) $ \(k, v) -> do
-                  putStrLn $ k <> " : " <> show v
+            Right r -> Eml.compileModule r desugared  >>= putStrLn
     _ -> usage
