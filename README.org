@@ -1,0 +1,25 @@
+#+TITLE: Eml
+#+DESCRIPTION: The Eml programming language
+
+* Introduction
+** What is Eml?
+   A very evil language that barely works;
+   but more generally a lambda calculus 
+   with Hindley-Milner type system that 
+   compiles to JavaScript.
+** What isn't Eml?
+   Anything useful, move on.
+
+* What's here
+  You can view some examples in the [[https://github.com/emiflake/Eml/tree/master/examples][examples]] folder.
+
+* TODO Goals
+** TODO Language goals [2/4] 
+   - [X] Simple parsing system
+   - [X] Basic type system using Hindley-Milner
+   - [ ] Proper FFI
+   - [ ] Higher-kinded types
+
+** TODO Meta goals [0/2]
+   - [ ] Write a design document
+   - [ ] Write a contribution guide

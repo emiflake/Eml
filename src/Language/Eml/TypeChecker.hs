@@ -86,10 +86,6 @@ generalize :: Type -> Type
 generalize ty = foldr TyForall ty (ftv ty)
 
 
--- runCheck :: forall m a sig.
---   ( Member Fresh sig
---   , Member (Error TypeError) sig
---   , Carrier sig m ) => m a -> IO (Either TypeError a)
 runCheck m = runM . runError . runFresh $ m
 
 inferIO :: Map String Type -> A.Expr -> IO (Either TypeError (Subst, Type))
@@ -118,7 +114,7 @@ checkModule (A.Module _ bindings) = go standardEnv bindings
 infer ::
   ( Member Fresh sig
   , Member (Error TypeError) sig
-  , Carrier sig m ) => Map String Type -> A.Expr -> m (Subst, Type)
+  , Carrier sig m ) => Map String Type A.Expr -> m (Subst, Type)
 infer env expr = case expr of
   A.Var v -> case Map.lookup v env of
     Nothing -> throwError $ MissingVariable v
