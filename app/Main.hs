@@ -33,5 +33,5 @@ main = do
               do
                 Eml.compileModule desugared >>= putStrLn
                 forM_ (Map.assocs r) $ \(k, v) -> do
-                  putStrLn $ show k <> " : " <> show v
+                  putStrLn $ k <> " : " <> show v
     _ -> usage

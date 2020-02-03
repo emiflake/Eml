@@ -5,6 +5,18 @@ false = <(eval "false") : Bool>
 
 not = <(eval "x=>!x") : Bool -> Bool>
 
-a = \x. (x + 3)
+not' = \x. if x then false else true
 
-test = (not true)
+a = \x y. (x + y)
+
+test = ((a 2) 3)
+
+concat = <(eval "x=>y=>x+y") : String -> String -> String>
+
+greet = \name. (concat "Hello, " name)
+
+log = <(eval "x=>console.log(x)") : String -> Unit>
+
+identity = <\x. x : Num -> Num>
+
+main = (log "Hello")

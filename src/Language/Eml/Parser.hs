@@ -209,15 +209,23 @@ ascription = do
   pure $ Asc expr ty
 
 type' :: Parser Type
-type' = tyParen <|> tyArrow
+type' = tyParen <|> tyForall <|> tyArrow
   where
     tyParen = parens type'
     tyVar = TyVar <$> whitespaced identifier
-    tyBuiltin =
+    tyForall = TyForall
+      <$ string "forall"
+      <*> whitespaced identifier
+      <* string "."
+      <* whitespace
+      <*> type'
+    tyBuiltin = whitespaced $
       (NumType <$ string "Num") <|>
-      (BoolType <$ string "Bool")
+      (BoolType <$ string "Bool") <|>
+      (StringType <$ string "String") <|>
+      (UnitType <$ string "Unit")
     tyArrow = do
-      lhs <- tyParen <|> tyVar <|> tyBuiltin
+      lhs <- tyParen <|> tyBuiltin <|> tyVar
       ((:~>) lhs <$ string "->" <*> type' <|> pure lhs)
 
 {- util -}

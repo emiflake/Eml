@@ -8,6 +8,7 @@ data Type
   = NumType -- `Number`
   | BoolType -- `Bool`
   | StringType -- `String`
+  | UnitType -- `Unit`
   | Type :~> Type -- `a -> b`
   | TyVar String -- `a`
   | TyForall String Type
@@ -20,6 +21,7 @@ ftv ty = case ty of
   NumType      -> Set.empty
   BoolType     -> Set.empty
   StringType   -> Set.empty
+  UnitType     -> Set.empty
   a :~> b      -> Set.union (ftv a) (ftv b)
   TyVar v      -> Set.singleton v
   TyForall v t -> Set.delete v (ftv t)

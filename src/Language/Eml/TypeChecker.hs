@@ -5,6 +5,7 @@ module Language.Eml.TypeChecker where
 import           Control.Effect
 import           Control.Effect.Error
 import           Control.Effect.Fresh
+import           Control.Effect.Lift
 
 
 import           Data.Map              (Map)
@@ -29,6 +30,7 @@ applySubst :: Subst -> Type -> Type
 applySubst _ NumType        = NumType
 applySubst _ BoolType       = BoolType
 applySubst _ StringType     = StringType
+applySubst _ UnitType       = UnitType
 applySubst s (TyForall _ t) = applySubst s t -- very iffy
 applySubst s (a :~> b)      = applySubst s a :~> applySubst s b
 applySubst s (TyVar v)      = fromMaybe (TyVar v) $ Map.lookup v s
@@ -43,6 +45,7 @@ occurs v (TyVar v')     = v == v'
 occurs _ NumType        = False
 occurs _ BoolType       = False
 occurs _ StringType     = False
+occurs _ UnitType       = False
 occurs _ (TyForall _ _) = False -- iffy
 occurs v (a :~> b)      = occurs v a || occurs v b
 
@@ -58,6 +61,10 @@ unify (a :~> b) (c :~> d) = do
   s1 <- unify a c
   s2 <- unify (applySubst s1 b) (applySubst s1 d)
   pure $ composeSubsts s1 s2
+-- unify NumType (TyVar v) = pure (Map.singleton v NumType) -- iffy
+-- unify BoolType (TyVar v) = pure (Map.singleton v BoolType) -- iffy
+-- unify StringType (TyVar v) = pure (Map.singleton v StringType) -- iffy
+-- unify UnitType (TyVar v) = pure (Map.singleton v UnitType) -- iffy
 unify t1 t2 = throwError $ UnificationError t1 t2
 
 instantiate ::
@@ -71,6 +78,7 @@ instantiate (a :~> b) = (:~>) <$> instantiate a <*> instantiate b
 instantiate NumType = pure NumType
 instantiate BoolType = pure BoolType
 instantiate StringType = pure StringType
+instantiate UnitType = pure UnitType
 instantiate (TyVar tv) = pure (TyVar tv)
 
 -- add forall to all free variables
@@ -98,11 +106,13 @@ unifyIO a b = runCheck $ unify a b
 checkModule ::
   ( Member Fresh sig
   , Member (Error TypeError) sig
+  , Member (Lift IO) sig
   , Carrier sig m ) => A.Module -> m (Map String Type)
 checkModule (A.Module _ bindings) = go (Map.singleton "eval" (StringType :~> TyForall "a" (TyVar "a"))) bindings
   where go env (A.Definition name expr : bindings') = do
+          sendM $ print env
           (_, t) <- infer env expr
-          go (Map.insert name t env) bindings'
+          go (Map.insert name (generalize t) env) bindings'
         go env [] = pure env
 
 infer ::
@@ -124,11 +134,12 @@ infer env expr = case expr of
     tvar <- freshTyVar
     (ts, tt) <- infer env t
     (fs, ft) <- infer env f
-    ct' <- instantiate ct
-    tt' <- instantiate $ applySubst cs tt
-    ft' <- instantiate $ applySubst (composeSubsts ts cs) ft
+    bs <- unify ct BoolType
+    ct' <- instantiate $ applySubst bs ct
+    tt' <- instantiate $ applySubst (composeSubsts cs bs) tt
+    ft' <- instantiate $ applySubst (foldr composeSubsts Map.empty [ts, cs, bs]) ft
     ss <- unify (BoolType :~> TyVar tvar :~> TyVar tvar) (ct' :~> tt' :~> ft')
-    let sss = foldr composeSubsts Map.empty [ss, fs, ts, cs]
+    let sss = foldr composeSubsts Map.empty [ss, fs, ts, cs, bs]
     pure (sss, applySubst sss (TyVar tvar))
   A.BinOp op l r -> do
     opTy <- inferOp op
@@ -175,6 +186,7 @@ infer env expr = case expr of
       (A.App _ _)     -> False
       (A.BinOp _ _ _) -> False
       (A.If _ _ _)    -> False
+      (A.Asc e _)     -> isValue e
       (A.NumLit _)    -> True
       (A.StringLit _) -> True
       (A.Var _)       -> False
