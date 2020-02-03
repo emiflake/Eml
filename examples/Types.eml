@@ -1,25 +1,42 @@
 begin Types
 
-True = <(eval "true") : Bool>
-False = <(eval "false") : Bool>
+True : Bool
+True = (eval "true")
 
-eq = <(eval "x=>y=>x==y") : Num -> Num -> Bool>
-mod = <(eval "x=>y=>x%y") : Num -> Num -> Num>
+False : Bool
+False = (eval "false")
 
-show = <(eval "x=>x.toString()") : Num -> String>
+eq : Num -> Num -> Bool
+eq = (eval "x=>y=>x==y")
+
+mod : Num -> Num -> Num
+mod = (eval "x=>y=>x%y")
+
+show : forall a. a -> String
+show = (eval "x=>x.toString()")
+
+concat : String -> String -> String
+concat = (eval "x=>y=>x+y")
+
+log : String -> Unit
+log = (eval "x=>console.log(x)")
+
+not : Bool -> Bool
+not = (eval "x=>!x")
+
 showBool = \x. if x then "True" else "False"
 
-not = <(eval "x=>!x") : Bool -> Bool>
+not' : Bool -> Bool
 not' = \x. if x then False else True
-
-concat = <(eval "x=>y=>x+y") : String -> String -> String>
 
 greet = \name. (concat "Hello, " name)
 
-log = <(eval "x=>console.log(x)") : String -> Unit>
+identity : a -> a
+identity = \x. x
 
+divides : Num -> Num -> Bool
 divides = \a b. (eq (mod a b) 0)
 
 main = \_.
-  (log (showBool (divides 2 3)))
+  (log (show (divides 2 3)))
 

@@ -10,7 +10,10 @@ desugarModule :: P.Module -> A.Module
 desugarModule (P.Module name defs) = A.Module name (fmap desugarDef defs)
 
 desugarDef :: P.Definition -> A.Definition
-desugarDef (P.Definition name expr) = A.Definition name (desugarExpr expr)
+desugarDef (P.Definition name asc expr) =
+  case asc of
+    Nothing -> A.Definition name (desugarExpr expr)
+    Just ty -> A.Definition name (desugarExpr (P.Asc expr ty))
 
 desugarExpr :: P.Expr -> A.Expr
 desugarExpr (P.NumLit num) = A.NumLit num

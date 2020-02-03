@@ -57,6 +57,9 @@ unify (TyVar v) tv@(TyVar _) = pure (Map.singleton v tv)
 unify (TyVar v) t2
   | occurs v t2 = throwError $ OccursCheck v t2
   | otherwise = pure (Map.singleton v t2)
+unify t1 (TyVar v)
+  | occurs v t1 = throwError $ OccursCheck v t1
+  | otherwise = pure (Map.singleton v t1)
 unify (a :~> b) (c :~> d) = do
   s1 <- unify a c
   s2 <- unify (applySubst s1 b) (applySubst s1 d)
@@ -114,7 +117,7 @@ checkModule (A.Module _ bindings) = go standardEnv bindings
 infer ::
   ( Member Fresh sig
   , Member (Error TypeError) sig
-  , Carrier sig m ) => Map String Type A.Expr -> m (Subst, Type)
+  , Carrier sig m ) => Map String Type -> A.Expr -> m (Subst, Type)
 infer env expr = case expr of
   A.Var v -> case Map.lookup v env of
     Nothing -> throwError $ MissingVariable v

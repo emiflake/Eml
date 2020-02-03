@@ -22,7 +22,11 @@ data Module
   deriving Show
 
 data Definition
-  = Definition String Expr
+  = Definition
+    { _bindingName :: String
+    , _ascription  :: Maybe Type
+    , _expr        :: Expr
+    }
   deriving Show
 
 doParseModule :: String -> Either ParseError Module
@@ -39,15 +43,43 @@ module' =
          <* whitespace
          <*> many1 definition
 
+
+{- syntax for definitions
+
+<name> : type
+<name> = binding
+
+-- desugars to
+
+<name> = <binding : type>
+
+-}
+
 definition :: Parser Definition
 definition = do
   name <- identifier
   _ <- whitespace
-  _ <- string "="
-  _ <- whitespace
-  v <- expr
-  _ <- whitespace
-  pure $ Definition name v
+  typedDefinition name <|> untypedDefinition name
+
+  where
+      typedDefinition name = do
+        _ <- string ":"
+        _ <- whitespace
+        ty <- type'
+        _ <- whitespace
+        _ <- string name
+        _ <- whitespace
+        _ <- string "="
+        _ <- whitespace
+        v <- expr
+        _ <- whitespace
+        pure $ Definition name (Just ty) v
+      untypedDefinition name = do
+        _ <- string "="
+        _ <- whitespace
+        v <- expr
+        _ <- whitespace
+        pure $ Definition name Nothing v
 
 {-| Grammar
 
@@ -59,6 +91,9 @@ op = :operator #op
 
 type = :bool   "Bool"
      | :num    "Num"
+     | :string "String"
+     | :unit   "Unit"
+     | :paren  "(" type ")"
      | :arrow  type "->" type
      | :var    var
 
@@ -209,10 +244,10 @@ ascription = do
   pure $ Asc expr ty
 
 type' :: Parser Type
-type' = tyParen <|> tyForall <|> tyArrow
+type' = tyForall <|> tyArrow
   where
     tyParen = parens type'
-    tyVar = TyVar <$> whitespaced identifier
+    tyVar = TyVar <$> identifier
     tyForall = TyForall
       <$ string "forall"
       <*> whitespaced identifier
@@ -226,7 +261,7 @@ type' = tyParen <|> tyForall <|> tyArrow
       (UnitType <$ string "Unit")
     tyArrow = do
       lhs <- tyParen <|> tyBuiltin <|> tyVar
-      ((:~>) lhs <$ string "->" <*> type' <|> pure lhs)
+      (try ((:~>) lhs <$ whitespaced (string "->") <*> type') <|> pure lhs)
 
 {- util -}
 whitespace :: Parser ()
