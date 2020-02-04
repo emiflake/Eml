@@ -112,7 +112,7 @@ checkModule (A.Module _ bindings) = go standardEnv bindings
           tvar <- freshTyVar
           (_, rt) <- infer (Map.insert name (TyVar tvar) env) expr
           rss <- unify (TyVar tvar) rt
-          let ft = applySubst rss (TyVar tvar)
+          let ft = generalizeIfValue expr $ applySubst rss (TyVar tvar)
           go (Map.insert name ft env) bindings'
         go env [] = pure env
 
