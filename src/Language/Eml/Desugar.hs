@@ -1,10 +1,9 @@
 module Language.Eml.Desugar where
 
-import           Language.Eml.AST      as A
-import           Language.Eml.Operator
-import           Language.Eml.Parser   as P
-
-import           Data.List.NonEmpty
+import Data.List.NonEmpty
+import Language.Eml.AST as A
+import Language.Eml.Operator
+import Language.Eml.Parser as P
 
 desugarModule :: P.Module -> A.Module
 desugarModule (P.Module name defs) = A.Module name (fmap desugarDef defs)
@@ -26,5 +25,3 @@ desugarExpr (P.Var v) = A.Var v
 desugarExpr (P.BinOp op lhs rhs) = A.BinOp op (desugarExpr lhs) (desugarExpr rhs)
 desugarExpr (P.If cond t f) = A.If (desugarExpr cond) (desugarExpr t) (desugarExpr f)
 desugarExpr (P.Asc expr ty) = A.Asc (desugarExpr expr) ty
-
-

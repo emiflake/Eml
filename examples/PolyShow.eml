@@ -1,7 +1,7 @@
 begin PolyShow
 
 show : forall a. a -> String
-show = (eval "x=>x.toString()")
+show = (eval "x => x.toString()")
 
 log : String -> Unit
 log = (eval "console.log")

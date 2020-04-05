@@ -1,10 +1,11 @@
 module Language.Eml.Operator
-  ( Operator(..)
-  ) where
+  ( Operator (..),
+  )
+where
 
 data Operator
   = Plus
   | Minus
   | Multiply
   | Cons
-  deriving Show
+  deriving (Show)
