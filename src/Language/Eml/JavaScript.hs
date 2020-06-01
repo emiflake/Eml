@@ -15,7 +15,7 @@ compileModule env (A.Module name defs) =
             : "** " <> name <> ".eml"
             : "*/"
             : fmap (compileDefinition env) defs
-   in (++ "main();") . (++ body) <$> readFile "marshal/StandardLibrary.js"
+   in pure $ body <> "\nmain();"
 
 escapeQuot = fmap (\c -> if c == '\'' then '$' else c)
 
@@ -35,7 +35,10 @@ compileDefinition env (A.Definition name expr) =
 compileExpr :: A.Expr -> String
 compileExpr (A.NumLit n) = show n
 compileExpr (A.StringLit s) = "\"" <> s <> "\""
-compileExpr (A.App f a) = compileExpr f <> "(" <> compileExpr a <> ")"
+compileExpr (A.App f a) =
+  case (f, a) of
+    (A.Var "eval", A.StringLit s) -> s
+    (_, _) -> compileExpr f <> "(" <> compileExpr a <> ")"
 compileExpr (A.Lam k body) = "(" <> k <> " => " <> compileExpr body <> ")"
 -- Hacky hack.
 -- TODO: figure out how to do proper recursion, somehow. Or maybe not.

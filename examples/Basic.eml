@@ -7,6 +7,13 @@ tail = (eval "x=>x[1]")
 
 compose = \f g x. (f (g x))
 
+
+eq : forall a. a -> a -> Bool
+eq = (eval "x=>y=>x==y")
+
+mod : Num -> Num -> Num
+mod = (eval "x=>y=>x % y")
+
 divides = \a b. (eq (mod a b) 0)
 dot = \obj accessor. (eval ("obj." + accessor))
 lower = \str. (dot str "toLowerCase()")
@@ -84,5 +91,3 @@ main = \_.
   (map (\n.
       (printf "Chance for 2 people to have the same birthday in a room of {} people is {}"
       [ n, (chance n) ])) (rangeTo 40))
-
-

@@ -28,8 +28,8 @@ data TypeError
 
 instance Show TypeError where
   show e = case e of
-    UnificationError a b -> "Could not unify " <> show a <> " ~ " <> show b
-    OccursCheck v expr -> "Occurs check failed " <> v <> " occurs in " <> show expr
+    UnificationError a b -> "Could not unify " <> pretty a <> " ~ " <> pretty b
+    OccursCheck v expr -> "Occurs check failed " <> v <> " occurs in " <> pretty expr
     MissingVariable v -> "Type variable " <> v <> " not in scope"
 
 pretty :: Type -> String

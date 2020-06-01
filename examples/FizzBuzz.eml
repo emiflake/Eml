@@ -1,6 +1,24 @@
 begin FizzBuzz
 
+eq : forall a. a -> a -> Bool
+eq = (eval "x=>y=>x==y")
+
+mod : Num -> Num -> Num
+mod = (eval "x=>y=>x % y")
+
+and : Bool -> Bool -> Bool
+and = (eval "x=>y=>x && y")
+
+show : forall a. a -> String
+show = (eval "x=>x.toString()")
+
 divides = \a b. (eq (mod a b) 0)
+
+concatStr : String -> String -> String
+concatStr = (eval "x=>y=>x+y")
+
+log : String -> Unit
+log = (eval "console.log")
 
 fizzbuzz =
   let one = \x.
@@ -13,6 +31,6 @@ fizzbuzz =
     else
       (show x)
   in
-  \n. if (eq 0 n) then "" else (((fizzbuzz (n - 1)) + "\n") + (one n))
+  \n. if (eq 0 n) then "" else (concatStr (concatStr (fizzbuzz (n - 1)) "\n") (one n))
 
-main = \_. (log (fizzbuzz 100))
+main = \_. (log (fizzbuzz 42))
