@@ -29,6 +29,7 @@ applyS :: Subst -> Type -> Type
 applyS _ t@(TyCon _) = t
 applyS s (TyForall f t) = TyForall f (applyS s t) -- very iffy
 applyS s (a :~> b) = applyS s a :~> applyS s b
+applyS s (TyApp f v) = TyApp (applyS s f) (applyS s v)
 applyS s (TyVar v) = fromMaybe (TyVar v) $ Map.lookup v s
 
 composeS :: Subst -> Subst -> Subst
@@ -42,6 +43,7 @@ occurs :: String -> Type -> Bool
 occurs v (TyVar v') = v == v'
 occurs _ (TyCon _) = False
 occurs _ (TyForall _ _) = False -- iffy
+occurs v (TyApp _ v') = occurs v v'
 occurs v (a :~> b) = occurs v a || occurs v b
 
 unify ::
@@ -63,10 +65,10 @@ unify (a :~> b) (c :~> d) = do
   s1 <- unify a c
   s2 <- unify (applyS s1 b) (applyS s1 d)
   pure $ s1 `composeS` s2
--- unify NumType (TyVar v) = pure (Map.singleton v NumType) -- iffy
--- unify BoolType (TyVar v) = pure (Map.singleton v BoolType) -- iffy
--- unify StringType (TyVar v) = pure (Map.singleton v StringType) -- iffy
--- unify UnitType (TyVar v) = pure (Map.singleton v UnitType) -- iffy
+unify (TyApp s v) (TyApp s' v') = do
+  s1 <- unify s s'
+  s2 <- unify (applyS s1 v) (applyS s1 v')
+  pure $ s1 `composeS` s2
 unify t1 t2 = throwError $ UnificationError t1 t2
 
 instantiate ::
@@ -80,6 +82,7 @@ instantiate (TyForall n ty) = do
   applyS (Map.singleton n (TyVar freshTy)) <$> instantiate ty
 instantiate (a :~> b) = (:~>) <$> instantiate a <*> instantiate b
 instantiate t@(TyCon _) = pure t
+instantiate (TyApp f v) = TyApp <$> instantiate f <*> instantiate v
 instantiate (TyVar tv) = pure (TyVar tv)
 
 -- add forall to all free variables

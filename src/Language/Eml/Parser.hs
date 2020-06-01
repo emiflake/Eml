@@ -219,11 +219,13 @@ type' = tyForall <|> tyArrow
         <* string "."
         <* whitespace
         <*> type'
-    tyBuiltin =
+    tyCon =
       whitespaced $
         TyCon <$> tyIdentifier
+    tyApp =
+      TyApp <$ char '(' <*> tyArrow <* whitespace <*> tyArrow <* char ')'
     tyArrow = do
-      lhs <- tyParen <|> tyBuiltin <|> tyVar
+      lhs <- try tyApp <|> tyParen <|> tyCon <|> tyVar -- <|> tyApp
       (try ((:~>) lhs <$ whitespaced (string "->") <*> type') <|> pure lhs)
 
 {- util -}

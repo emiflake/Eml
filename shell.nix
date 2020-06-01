@@ -20,7 +20,8 @@ in pkgs.mkShell {
     ispell
     haskellPackages.hindent
 
+    # helpful
+    bat
     nodejs
-
   ];
 }

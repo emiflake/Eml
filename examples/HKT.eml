@@ -1,0 +1,54 @@
+begin HKT
+
+cons : a -> (List a) -> (List a)
+cons = \x xs. (eval "[x].concat(xs)")
+
+nil : (List a)
+nil = (eval "[]")
+
+
+show : a -> String
+show = (eval "x=>x.toString()")
+
+concat : (List a) -> (List a) -> (List a)
+concat = \xs ys. (eval "xs.concat(ys)")
+
+log : a -> Unit
+log = (eval "console.log")
+
+
+makeFunctor : forall f. (forall a. forall b. (a -> b) -> (f a) -> (f b)) -> (DFunctor f)
+makeFunctor = (eval "f=>({f})")
+
+
+listMap : (a -> b) -> (List a) -> (List b)
+listMap = \f xs. (eval "xs.map(f)")
+
+
+maybeMap : (a -> b) -> (Maybe a) -> (Maybe b)
+maybeMap = \f m. (eval "m._tag == 'Just' ? {..m, v: f(m.v)} : m")
+
+just : a -> (Maybe a)
+just = (eval "v=>({_tag:'Just',v})")
+
+nothing : (Maybe a)
+nothing = (eval "({_tag:'Nothing')}")
+
+fmap : (DFunctor f) -> (a -> b) -> (f a) -> (f b)
+fmap = (eval "({f})=>f")
+
+maybeFunctor : (DFunctor Maybe)
+maybeFunctor = (makeFunctor maybeMap)
+
+listFunctor = (makeFunctor listMap)
+
+xs = (concat [2, 5, 10] [10, 53, 10])
+xs2 = (fmap maybeFunctor show xs) -- Type error: Could not unify List ~ Maybe
+-- Obviously, we're giving the maybeFunctor to a List!
+
+
+
+
+
+
+main = \_. (log xs)

@@ -17,7 +17,7 @@ desugarDef (P.Definition name asc expr) =
 desugarExpr :: P.Expr -> A.Expr
 desugarExpr (P.NumLit num) = A.NumLit num
 desugarExpr (P.StringLit str) = A.StringLit str
-desugarExpr (P.ListLit xs) = foldr (A.BinOp Cons) (A.Var "nil") (desugarExpr <$> xs)
+desugarExpr (P.ListLit xs) = foldr (A.App . A.App (A.Var "cons")) (A.Var "nil") (desugarExpr <$> xs)
 desugarExpr (P.App app) = foldl1 A.App (desugarExpr <$> app)
 desugarExpr (P.Lam (h :| t) e) = foldr A.Lam (desugarExpr e) (h : t)
 desugarExpr (P.Let k v e) = A.Let k (desugarExpr v) (desugarExpr e)

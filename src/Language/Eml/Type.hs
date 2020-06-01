@@ -9,6 +9,7 @@ data Type
   = TyCon String -- String / etc.
   | Type :~> Type -- `a -> b`
   | TyVar String -- `a`
+  | TyApp Type Type -- `Foo a`, highly experimental
   | TyForall String Type
   deriving (Eq, Show)
 
@@ -19,6 +20,7 @@ ftv ty = case ty of
   TyCon _ -> Set.empty
   a :~> b -> Set.union (ftv a) (ftv b)
   TyVar v -> Set.singleton v
+  TyApp _ _ -> Set.empty
   TyForall v t -> Set.delete v (ftv t)
 
 data TypeError
@@ -35,8 +37,12 @@ instance Show TypeError where
 pretty :: Type -> String
 pretty ty = case ty of
   TyCon n -> n
-  a :~> b -> pretty a <> " -> " <> pretty b
+  a :~> b ->
+    case a of
+      TyVar v -> v <> " -> " <> pretty b
+      _ -> "(" <> pretty a <> ") -> " <> pretty b
   TyVar v -> v
+  TyApp c v -> pretty c <> " " <> pretty v
   TyForall v t -> "forall " <> v <> " . " <> pretty t
 
 stringTy :: Type
