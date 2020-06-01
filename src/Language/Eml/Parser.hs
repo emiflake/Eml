@@ -11,7 +11,7 @@ import Control.Applicative (Alternative)
 import Control.Monad
 import Data.List.NonEmpty hiding (some1)
 import Language.Eml.Operator (Operator (..))
-import Language.Eml.Type
+import Language.Eml.Type as Type
 import Text.Parsec
 import Text.Parsec.String
 
@@ -139,24 +139,6 @@ listLit =
 
 stringLit :: Parser Expr
 stringLit = StringLit <$> parseString
-  where
-    -- where block stolen from https://stackoverflow.com/questions/24106314/parser-for-quoted-string-using-parsec
-
-    escape :: Parser String
-    escape = do
-      d <- char '\\'
-      c <- oneOf "\\\"0nrvtbf" -- all the characters which can be escaped
-      return [d, c]
-    nonEscape :: Parser Char
-    nonEscape = noneOf "\\\"\0\n\r\v\t\b\f"
-    character :: Parser String
-    character = fmap return nonEscape <|> escape
-    parseString :: Parser String
-    parseString = do
-      _ <- char '"'
-      strings <- many character
-      _ <- char '"'
-      return $ concat strings
 
 {- let -}
 let' :: Parser Expr
@@ -239,10 +221,7 @@ type' = tyForall <|> tyArrow
         <*> type'
     tyBuiltin =
       whitespaced $
-        (NumType <$ string "Num")
-          <|> (BoolType <$ string "Bool")
-          <|> (StringType <$ string "String")
-          <|> (UnitType <$ string "Unit")
+        TyCon <$> tyIdentifier
     tyArrow = do
       lhs <- tyParen <|> tyBuiltin <|> tyVar
       (try ((:~>) lhs <$ whitespaced (string "->") <*> type') <|> pure lhs)
@@ -271,7 +250,7 @@ identifier =
         (:) <$> idFirst <*> many idRest
         where
           idFirst = oneOf (['_'] <> ['a' .. 'z'])
-          idRest = oneOf (['_', '\''] <> ['A' .. 'Z'] <> ['a' .. 'z'] <> ['0' .. '9'])
+          idRest = oneOf (['_', '\'', '-'] <> ['A' .. 'Z'] <> ['a' .. 'z'] <> ['0' .. '9'])
    in guarded (`notElem` ["if", "then", "else"]) sym
 
 tyIdentifier :: Parser String
@@ -291,3 +270,25 @@ moduleIdentifier =
           idFirst = oneOf (['_'] <> ['A' .. 'Z'])
           idRest = oneOf (['.', '_', '\''] <> ['A' .. 'Z'] <> ['a' .. 'z'] <> ['0' .. '9'])
    in guarded (`notElem` ["if", "then", "else"]) sym
+
+{- string parse -}
+parseString :: Parser String
+parseString = parseString'
+  where
+    -- where block stolen from https://stackoverflow.com/questions/24106314/parser-for-quoted-string-using-parsec
+
+    escape :: Parser String
+    escape = do
+      d <- char '\\'
+      c <- oneOf "\\\"0nrvtbf" -- all the characters which can be escaped
+      return [d, c]
+    nonEscape :: Parser Char
+    nonEscape = noneOf "\\\"\0\n\r\v\t\b\f"
+    character :: Parser String
+    character = fmap return nonEscape <|> escape
+    parseString' :: Parser String
+    parseString' = do
+      _ <- char '"'
+      strings <- many character
+      _ <- char '"'
+      return $ concat strings

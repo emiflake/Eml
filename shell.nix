@@ -7,13 +7,20 @@ let
   ormolu = import sources.ormolu { };
 
 in pkgs.mkShell {
-  buildInputs = [
+  buildInputs = with pkgs; [
 
-    pkgs.hello
-    pkgs.nixfmt
-    pkgs.stack
-    (all-hies.selection { selector = p: { inherit (p) ghc882; }; })
-    ormolu.ormolu
+    nixfmt
+    stack
+    hlint
+    ghcid
+    haskellPackages.ormolu
+
+    gnumake
+    ghc
+    ispell
+    haskellPackages.hindent
+
+    nodejs
 
   ];
 }

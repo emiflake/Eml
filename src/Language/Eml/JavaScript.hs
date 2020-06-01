@@ -4,7 +4,7 @@ import Data.Map (Map)
 import qualified Data.Map as Map
 import Language.Eml.AST as A
 import Language.Eml.Operator (Operator (..))
-import Language.Eml.Type (Type)
+import Language.Eml.Type (Type, pretty)
 
 compileModule :: Map String Type -> A.Module -> IO String
 compileModule env (A.Module name defs) =
@@ -23,7 +23,7 @@ compileDefinition :: Map String Type -> A.Definition -> String
 compileDefinition env (A.Definition name expr) =
   case Map.lookup name env of
     Just ty ->
-      "// " <> name <> " : " <> show ty <> "\n"
+      "// " <> name <> " : " <> pretty ty <> "\n"
         <> "const "
         <> escapeQuot name
         <> " = "
