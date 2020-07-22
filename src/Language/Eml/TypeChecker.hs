@@ -6,10 +6,10 @@ module Language.Eml.TypeChecker where
 import Control.Effect
 import Control.Effect.Error
 import Control.Effect.Fresh
+import Control.Lens
 import Data.Map (Map)
 import qualified Data.Map as Map
 import Data.Maybe
--- REMOVE
 import Debug.Trace
 import qualified Language.Eml.AST as A
 import Language.Eml.Operator
@@ -23,7 +23,12 @@ freshTyVar ::
     Carrier sig m
   ) =>
   m String
-freshTyVar = ("t" <>) . show <$> fresh
+freshTyVar = do
+  let easy = (: []) <$> ['a' .. 'z']
+  n <- fresh
+  pure $ case easy ^? element n of
+    Nothing -> "t" <> show n
+    Just v -> v
 
 applyS :: Subst -> Type -> Type
 applyS _ t@(TyCon _) = t
@@ -103,7 +108,10 @@ unifyIO a b = runCheck $ unify a b
 standardEnv :: Map String Type
 standardEnv =
   Map.fromList
-    [("eval", TyForall "a" (Type.stringTy :~> TyVar "a"))]
+    [ ( "eval",
+        TyForall "a" (Type.stringTy :~> TyVar "a")
+      )
+    ]
 
 checkModule ::
   ( Member Fresh sig,
@@ -114,7 +122,7 @@ checkModule ::
   m (Map String Type)
 checkModule (A.Module _ bindings) = go standardEnv bindings
   where
-    go env (A.Definition name expr : bindings') = do
+    go env (A.TermDefinition name expr : bindings') = do
       tvar <- freshTyVar
       (_, rt) <- infer (Map.insert name (TyVar tvar) env) expr
       rss <- unify (TyVar tvar) rt

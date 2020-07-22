@@ -1,6 +1,6 @@
 module Language.Eml.Parser
   ( Module (..),
-    Definition (..),
+    TopLevelDefinition (..),
     Expr (..),
     doParseModule,
     doParseFile,
@@ -10,17 +10,19 @@ where
 import Control.Applicative (Alternative)
 import Control.Monad
 import Data.List.NonEmpty hiding (some1)
+import qualified Language.Eml.Module as Module
+import Language.Eml.Module (ModulePath (..))
 import Language.Eml.Operator (Operator (..))
 import Language.Eml.Type as Type
 import Text.Parsec
 import Text.Parsec.String
 
 data Module
-  = Module String [Definition]
+  = Module ModulePath [TopLevelDefinition]
   deriving (Show)
 
-data Definition
-  = Definition
+data TopLevelDefinition
+  = TermDefinition
       { _bindingName :: String,
         _ascription :: Maybe Type,
         _expr :: Expr
@@ -37,11 +39,11 @@ module' :: Parser Module
 module' =
   Module <$ string "begin"
     <* whitespace
-    <*> moduleIdentifier
+    <*> modulePath
     <* whitespace
     <*> many1 definition
 
-definition :: Parser Definition
+definition :: Parser TopLevelDefinition
 definition = do
   name <- identifier
   _ <- whitespace
@@ -58,13 +60,13 @@ definition = do
       _ <- whitespace
       v <- expr
       _ <- whitespace
-      pure $ Definition name (Just ty) v
+      pure $ TermDefinition name (Just ty) v
     untypedDefinition name = do
       _ <- string "="
       _ <- whitespace
       v <- expr
       _ <- whitespace
-      pure $ Definition name Nothing v
+      pure $ TermDefinition name Nothing v
 
 -- | Grammar
 --
@@ -106,6 +108,15 @@ data Expr
   | BinOp Operator Expr Expr
   | If Expr Expr Expr
   deriving (Show)
+
+keywords :: [String]
+keywords =
+  [ "if",
+    "then",
+    "else",
+    "let",
+    "in"
+  ]
 
 some1 :: Parser a -> Parser (NonEmpty a)
 some1 p =
@@ -253,7 +264,7 @@ identifier =
         where
           idFirst = oneOf (['_'] <> ['a' .. 'z'])
           idRest = oneOf (['_', '\'', '-'] <> ['A' .. 'Z'] <> ['a' .. 'z'] <> ['0' .. '9'])
-   in guarded (`notElem` ["if", "then", "else"]) sym
+   in guarded (`notElem` keywords) sym
 
 tyIdentifier :: Parser String
 tyIdentifier =
@@ -262,16 +273,20 @@ tyIdentifier =
         where
           idFirst = oneOf (['_'] <> ['A' .. 'Z'])
           idRest = oneOf (['_', '\''] <> ['A' .. 'Z'] <> ['a' .. 'z'] <> ['0' .. '9'])
-   in guarded (`notElem` ["if", "then", "else"]) sym
+   in guarded (`notElem` keywords) sym
 
-moduleIdentifier :: Parser String
-moduleIdentifier =
+dot :: Parser ()
+dot = void $ char '.'
+
+modulePath :: Parser ModulePath
+modulePath =
   let sym =
         (:) <$> idFirst <*> many idRest
         where
           idFirst = oneOf (['_'] <> ['A' .. 'Z'])
           idRest = oneOf (['.', '_', '\''] <> ['A' .. 'Z'] <> ['a' .. 'z'] <> ['0' .. '9'])
-   in guarded (`notElem` ["if", "then", "else"]) sym
+      modulePathSegment = guarded (`notElem` keywords) sym
+   in ModulePath <$> modulePathSegment `sepBy` dot
 
 {- string parse -}
 parseString :: Parser String

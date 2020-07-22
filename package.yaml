@@ -25,6 +25,8 @@ dependencies:
 - pretty-simple
 - fused-effects == 0.5.0.1
 - containers
+- text
+- lens
 
 library:
   source-dirs: src

@@ -1,19 +1,20 @@
 module Language.Eml.AST
   ( Module (..),
-    Definition (..),
+    TopLevelDefinition (..),
     Expr (..),
   )
 where
 
+import Language.Eml.Module
 import Language.Eml.Operator (Operator (..))
 import Language.Eml.Type
 
 data Module
-  = Module String [Definition]
+  = Module ModulePath [TopLevelDefinition]
   deriving (Show)
 
-data Definition
-  = Definition String Expr
+data TopLevelDefinition
+  = TermDefinition String Expr
   deriving (Show)
 
 data Expr

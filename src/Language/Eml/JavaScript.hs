@@ -3,27 +3,28 @@ module Language.Eml.JavaScript where
 import Data.Map (Map)
 import qualified Data.Map as Map
 import Language.Eml.AST as A
+import Language.Eml.Emit
 import Language.Eml.Operator (Operator (..))
-import Language.Eml.Type (Type, pretty)
+import Language.Eml.Type (Type)
 
 compileModule :: Map String Type -> A.Module -> IO String
-compileModule env (A.Module name defs) =
+compileModule env (A.Module path defs) =
   let body =
         unlines $
           "/*"
             : "** Eml compiled module"
-            : "** " <> name <> ".eml"
+            : "** " <> emit path <> ".eml"
             : "*/"
             : fmap (compileDefinition env) defs
    in pure $ body <> "\nmain();"
 
 escapeQuot = fmap (\c -> if c == '\'' then '$' else c)
 
-compileDefinition :: Map String Type -> A.Definition -> String
-compileDefinition env (A.Definition name expr) =
+compileDefinition :: Map String Type -> A.TopLevelDefinition -> String
+compileDefinition env (A.TermDefinition name expr) =
   case Map.lookup name env of
     Just ty ->
-      "// " <> name <> " : " <> pretty ty <> "\n"
+      "// " <> name <> " : " <> emit ty <> "\n"
         <> "const "
         <> escapeQuot name
         <> " = "

@@ -1,10 +1,10 @@
 begin Types
 
-True : Bool
-True = (eval "true")
+true : Bool
+true = (eval "true")
 
-False : Bool
-False = (eval "false")
+false : Bool
+false = (eval "false")
 
 eq : Num -> Num -> Bool
 eq = (eval "x=>y=>x==y")
@@ -26,9 +26,6 @@ not = (eval "x=>!x")
 
 showBool = \x. if x then "True" else "False"
 
-not' : Bool -> Bool
-not' = \x. if x then False else True
-
 greet = \name. (concat "Hello, " name)
 
 identity : a -> a
@@ -42,3 +39,5 @@ divides = \a b. (eq (mod a b) 0)
 main = \_.
   (log (show (triangle 10)))
 
+applyTwice : (a -> b) -> a -> b
+applyTwice = \f x. (f (f x))

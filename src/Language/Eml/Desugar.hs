@@ -8,11 +8,11 @@ import Language.Eml.Parser as P
 desugarModule :: P.Module -> A.Module
 desugarModule (P.Module name defs) = A.Module name (fmap desugarDef defs)
 
-desugarDef :: P.Definition -> A.Definition
-desugarDef (P.Definition name asc expr) =
+desugarDef :: P.TopLevelDefinition -> A.TopLevelDefinition
+desugarDef (P.TermDefinition name asc expr) =
   case asc of
-    Nothing -> A.Definition name (desugarExpr expr)
-    Just ty -> A.Definition name (desugarExpr (P.Asc expr ty))
+    Nothing -> A.TermDefinition name (desugarExpr expr)
+    Just ty -> A.TermDefinition name (desugarExpr (P.Asc expr ty))
 
 desugarExpr :: P.Expr -> A.Expr
 desugarExpr (P.NumLit num) = A.NumLit num
